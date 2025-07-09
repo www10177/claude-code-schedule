@@ -24,7 +24,11 @@ struct Args {
     work_time: Option<String>,
 
     /// Message to pass to Claude Code (default: "Continue working on what you were working on previously. If you weren't working on something previously, then come up with a list of tasks to work on based on what is left in the codebase.")
-    #[arg(short, long, default_value = "Continue working on what you were working on previously. If you weren't working on something previously, then come up with a list of tasks to work on based on what is left in the codebase.")]
+    #[arg(
+        short,
+        long,
+        default_value = "Continue working on what you were working on previously. If you weren't working on something previously, then come up with a list of tasks to work on based on what is left in the codebase."
+    )]
     message: String,
 
     /// Dry run - print what would happen without scheduling
@@ -59,7 +63,10 @@ async fn main() -> Result<()> {
     }
 
     println!("Claude Code Schedule by Ian Macalinao");
-    println!("Scheduled to run at: {}", target_time.format("%Y-%m-%d %H:%M:%S"));
+    println!(
+        "Scheduled to run at: {}",
+        target_time.format("%Y-%m-%d %H:%M:%S")
+    );
     println!("Command: {}", build_claude_command(&args.message));
     println!("Press Ctrl+C to cancel...\n");
 
@@ -86,7 +93,10 @@ async fn main() -> Result<()> {
         let minutes = duration_until.num_minutes() % 60;
         let seconds = duration_until.num_seconds() % 60;
 
-        print!("\rTime remaining: {:02}:{:02}:{:02}", hours, minutes, seconds);
+        print!(
+            "\rTime remaining: {:02}:{:02}:{:02}",
+            hours, minutes, seconds
+        );
         use std::io::{self, Write};
         io::stdout().flush().unwrap();
 
@@ -103,28 +113,26 @@ fn parse_time(time_str: &str) -> Result<DateTime<Local>> {
         anyhow::bail!("Invalid time format. Expected HH:MM");
     }
 
-    let hour: u32 = parts[0]
-        .parse()
-        .context("Invalid hour")?;
-    let minute: u32 = parts[1]
-        .parse()
-        .context("Invalid minute")?;
+    let hour: u32 = parts[0].parse().context("Invalid hour")?;
+    let minute: u32 = parts[1].parse().context("Invalid minute")?;
 
     if hour >= 24 || minute >= 60 {
         anyhow::bail!("Invalid time. Hour must be 0-23, minute must be 0-59");
     }
 
     let now = Local::now();
-    Ok(now
-        .with_hour(hour)
+    now.with_hour(hour)
         .and_then(|t| t.with_minute(minute))
         .and_then(|t| t.with_second(0))
         .and_then(|t| t.with_nanosecond(0))
-        .context("Failed to create target time")?)
+        .context("Failed to create target time")
 }
 
 fn build_claude_command(message: &str) -> String {
-    format!("claude --dangerously-skip-permissions \"{}\"", message.replace("\"", "\\\""))
+    format!(
+        "claude --dangerously-skip-permissions \"{}\"",
+        message.replace("\"", "\\\"")
+    )
 }
 
 fn run_claude_command(message: &str) -> Result<()> {
