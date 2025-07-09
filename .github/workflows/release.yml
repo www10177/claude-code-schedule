@@ -1,0 +1,122 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Check version
+      run: |
+        # Extract version from Cargo.toml
+        CARGO_VERSION=$(grep "^version" Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+        # Extract version from tag
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        # Compare versions
+        if [ "$CARGO_VERSION" != "$TAG_VERSION" ]; then
+          echo "Error: Cargo.toml version ($CARGO_VERSION) does not match tag version ($TAG_VERSION)"
+          exit 1
+        fi
+        echo "Version check passed: $CARGO_VERSION"
+    
+    - name: Run tests
+      run: cargo test --all-features
+    
+    - name: Publish to crates.io
+      run: cargo publish
+      env:
+        CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  build-binaries:
+    name: Build Release Binaries
+    needs: publish
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: claude-code-schedule
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            binary: claude-code-schedule
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: claude-code-schedule.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary: claude-code-schedule
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary: claude-code-schedule
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+    
+    - name: Install musl tools
+      if: matrix.target == 'x86_64-unknown-linux-musl'
+      run: sudo apt-get install -y musl-tools
+    
+    - name: Build
+      run: cargo build --release --target ${{ matrix.target }}
+    
+    - name: Create archive
+      shell: bash
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        ARCHIVE_NAME="claude-code-schedule-${VERSION}-${{ matrix.target }}"
+        mkdir -p "${ARCHIVE_NAME}"
+        cp "target/${{ matrix.target }}/release/${{ matrix.binary }}" "${ARCHIVE_NAME}/"
+        cp README.md LICENSE "${ARCHIVE_NAME}/"
+        
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          7z a "${ARCHIVE_NAME}.zip" "${ARCHIVE_NAME}"
+          echo "ASSET=${ARCHIVE_NAME}.zip" >> $GITHUB_ENV
+        else
+          tar czf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
+          echo "ASSET=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
+        fi
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: binary-${{ matrix.target }}
+        path: ${{ env.ASSET }}
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        pattern: binary-*
+        merge-multiple: true
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: artifacts/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
