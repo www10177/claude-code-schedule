@@ -1,10 +1,18 @@
-# Claude Code Schedule by Ian Macalinao
+# Claude Code Schedule
 
-Schedule Claude Code to run overnight and refresh your rate limits before work.
+Schedule Claude Code to run at a specific time.
 
-## What it does
+## Installation
 
-This tool runs Claude Code at 6:00 AM (or any time you choose) so your rate limits are refreshed when you start working. Just leave it running in a terminal overnight.
+```bash
+# Install from crates.io
+cargo install claude-code-schedule
+
+# Or clone and build locally
+git clone https://github.com/macalinao/claude-code-schedule
+cd claude-code-schedule
+cargo install --path .
+```
 
 ## Usage
 
@@ -14,36 +22,9 @@ ccschedule
 
 # Run at a specific time
 ccschedule --time 05:30
-
-# Run 3 hours before work starts
-ccschedule --work-time 09:00
-
-# Custom message
-ccschedule --message "Good morning, let's code!"
-
-# See what would happen without running
-ccschedule --dry-run
 ```
 
-## Example
-
-```bash
-$ ccschedule
-Claude Code Schedule by Ian Macalinao
-Scheduled to run at: 2024-01-15 06:00:00
-Command: claude --dangerously-skip-permissions "Good morning!"
-Press Ctrl+C to cancel...
-
-Time remaining: 08:32:15
-```
-
-The tool will count down and automatically run Claude Code at the scheduled time.
-
-## Installation
-
-```bash
-cargo install claude-code-schedule
-```
+The tool will show a countdown and run Claude Code when the time arrives. Press Ctrl+C to cancel.
 
 ## About
 

@@ -16,12 +16,8 @@ use tokio::time::sleep;
 )]
 struct Args {
     /// Run Claude Code at a specific time (format: HH:MM, default: 06:00)
-    #[arg(short, long, value_name = "HH:MM", conflicts_with = "work_time")]
+    #[arg(short, long, value_name = "HH:MM")]
     time: Option<String>,
-
-    /// Schedule 3 hours before work time (format: HH:MM)
-    #[arg(short, long, value_name = "HH:MM", conflicts_with = "time")]
-    work_time: Option<String>,
 
     /// Message to pass to Claude Code (default: "Continue working on what you were working on previously. If you weren't working on something previously, then come up with a list of tasks to work on based on what is left in the codebase.")
     #[arg(
@@ -42,9 +38,6 @@ async fn main() -> Result<()> {
 
     let target_time = if let Some(time_str) = args.time {
         parse_time(&time_str)?
-    } else if let Some(work_time_str) = args.work_time {
-        let work_time = parse_time(&work_time_str)?;
-        work_time - chrono::Duration::hours(3)
     } else {
         // Default to 6:00 AM
         parse_time("06:00")?

@@ -10,11 +10,11 @@ Claude Code Schedule is a Rust CLI tool created by Ian Macalinao that runs Claud
 
 1. **CLI Interface** (`src/main.rs:8-32`)
    - Uses `clap` for argument parsing
-   - Supports time scheduling and work-time scheduling
+   - Supports time scheduling
    - Implements dry-run mode for testing
 
-2. **Time Calculation** (`src/main.rs:43-56`)
-   - Handles direct time input or work-time minus 3 hours
+2. **Time Calculation** (`src/main.rs:39-49`)
+   - Handles direct time input
    - Uses `chrono` for time manipulation
    - Automatically schedules for next day if time has passed
 
@@ -43,9 +43,6 @@ cargo run
 
 # Run at a specific time
 cargo run -- --time 05:00
-
-# Run 3 hours before work time
-cargo run -- --work-time 09:00 --message "Starting work prep"
 
 # Dry run to see what would happen
 cargo run -- --dry-run
