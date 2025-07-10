@@ -87,8 +87,7 @@ async fn main() -> Result<()> {
         let seconds = duration_until.num_seconds() % 60;
 
         print!(
-            "\rTime remaining: {:02}:{:02}:{:02}",
-            hours, minutes, seconds
+            "\rTime remaining: {hours:02}:{minutes:02}:{seconds:02}"
         );
         use std::io::{self, Write};
         io::stdout().flush().unwrap();
