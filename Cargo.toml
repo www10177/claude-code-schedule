@@ -6,7 +6,7 @@ authors = ["Ian Macalinao"]
 description = "Claude Code Schedule by Ian Macalinao - Schedule Claude Code commands to run overnight to refresh rate limits"
 license = "Apache-2.0"
 repository = "https://github.com/macalinao/claude-code-schedule"
-keywords = ["claude", "ai", "scheduling", "cli", "automation", "ian-macalinao"]
+keywords = ["claude-code", "scheduling", "cli", "automation", "ian-macalinao"]
 categories = ["command-line-utilities", "development-tools"]
 
 [[bin]]
