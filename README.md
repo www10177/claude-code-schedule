@@ -1,6 +1,10 @@
 # Claude Code Schedule
 
-Schedule Claude Code to run at a specific time.
+Schedule Claude Code to run overnight so your rate limits refresh before work.
+
+## Why Use This?
+
+Run this tool before going to bed to ensure Claude Code gets used overnight. This refreshes your rate limits so you start each workday with a clean slate. Perfect for developers who want to maximize their Claude Code usage.
 
 ## Installation
 
@@ -17,14 +21,24 @@ cargo install --path .
 ## Usage
 
 ```bash
-# Run at 6:00 AM (default)
+# Run at 6:00 AM (default) - perfect for overnight scheduling
 ccschedule
 
 # Run at a specific time
 ccschedule --time 05:30
+
+# Custom message for Claude
+ccschedule --message "Start the day by reviewing code quality"
 ```
 
-The tool will show a countdown and run Claude Code when the time arrives. Press Ctrl+C to cancel.
+The tool will show a countdown and automatically run `claude --dangerously-skip-permissions` when the time arrives. Press Ctrl+C to cancel.
+
+## Typical Workflow
+
+1. **Before bed**: Run `ccschedule` in a terminal
+2. **Go to sleep**: Let it run overnight 
+3. **Wake up**: Claude has already run and your rate limits are refreshed
+4. **Start coding**: Full rate limits available for your workday
 
 ## About
 

@@ -52,12 +52,55 @@ cargo run -- --dry-run
 
 Run all tests:
 ```bash
-cargo test
+cargo test --verbose --all-features
 ```
 
 Key test areas:
 - Time parsing validation
 - Command building with proper escaping
+
+## CI Checks (Required Before Every Commit)
+
+**IMPORTANT**: Run these commands after every code change to ensure CI passes:
+
+```bash
+# 1. Check code formatting
+cargo fmt -- --check
+
+# 2. Run clippy linter with strict warnings
+cargo clippy --all-features -- -D warnings
+
+# 3. Run all tests with verbose output
+cargo test --verbose --all-features
+
+# 4. Verify debug build works
+cargo build --verbose --all-features
+
+# 5. Verify release build works
+cargo build --verbose --release --all-features
+```
+
+All commands must pass with zero warnings or errors. The GitHub Actions CI runs these exact same checks on:
+- Ubuntu, Windows, and macOS
+- Stable Rust toolchain
+- Security audit check
+- MSRV (Minimum Supported Rust Version) check
+
+### Quick CI Check Script
+
+Save this as a script to run all checks at once:
+
+```bash
+#!/bin/bash
+set -e
+echo "Running CI checks..."
+cargo fmt -- --check
+cargo clippy --all-features -- -D warnings  
+cargo test --verbose --all-features
+cargo build --verbose --all-features
+cargo build --verbose --release --all-features
+echo "All CI checks passed!"
+```
 
 ## Building
 
