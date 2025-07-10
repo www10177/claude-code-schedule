@@ -1,5 +1,7 @@
 # Claude Code Schedule
 
+[![Crates.io](https://img.shields.io/crates/v/claude-code-schedule.svg)](https://crates.io/crates/claude-code-schedule)
+
 Schedule Claude Code to run overnight so your rate limits refresh before work.
 
 ## Why Use This?
