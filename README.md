@@ -1,4 +1,4 @@
-# Claude Code Schedule
+# Claude Code Schedule by Ian Macalinao
 
 [![Crates.io](https://img.shields.io/crates/v/claude-code-schedule.svg)](https://crates.io/crates/claude-code-schedule)
 
@@ -38,7 +38,7 @@ The tool will show a countdown and automatically run `claude --dangerously-skip-
 ## Typical Workflow
 
 1. **Before bed**: Run `ccschedule` in a terminal
-2. **Go to sleep**: Let it run overnight 
+2. **Go to sleep**: Let it run overnight
 3. **Wake up**: Claude has already run and your rate limits are refreshed
 4. **Start coding**: Full rate limits available for your workday
 
