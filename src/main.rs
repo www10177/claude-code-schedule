@@ -122,14 +122,14 @@ fn parse_time(time_str: &str) -> Result<DateTime<Local>> {
 
 fn build_claude_command(message: &str) -> String {
     format!(
-        "claude --dangerously-skip-permissions \"{}\"",
+        "claude -c --dangerously-skip-permissions \"{}\"",
         message.replace("\"", "\\\"")
     )
 }
 
 fn run_claude_command(message: &str) -> Result<()> {
     let output = Command::new("claude")
-        .args(["--dangerously-skip-permissions", message])
+        .args(["-c", "--dangerously-skip-permissions", message])
         .spawn()
         .context("Failed to start claude command")?
         .wait()
