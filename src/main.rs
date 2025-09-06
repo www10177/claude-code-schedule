@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Local, Timelike};
 use clap::Parser;
+use std::fs;
 use std::process::Command;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -10,22 +11,24 @@ use tokio::time::sleep;
     author = "Ian Macalinao <ian@macalinao.com>",
     version,
     about = "Schedule Claude Code to run at a specific time - by Ian Macalinao",
-    long_about = "A CLI tool by Ian Macalinao that runs Claude Code at a scheduled time. \
-                  The tool will stay running in your terminal and execute the command when the time is reached.\
-                  \n\nCreated by Ian Macalinao - https://ianm.com"
+    long_about = "A CLI tool by Ian Macalinao that runs Claude Code at a scheduled time.                   The tool will stay running in your terminal and execute the command when the time is reached.                  \n\nCreated by Ian Macalinao - https://ianm.com"
 )]
 struct Args {
     /// Run Claude Code at a specific time (format: HH:MM, default: 06:00)
     #[arg(short, long, value_name = "HH:MM")]
     time: Option<String>,
 
-    /// Message to pass to Claude Code (default: "Continue working on what you were working on previously. If you weren't working on something previously, then come up with a list of tasks to work on based on what is left in the codebase.")
-    #[arg(
-        short,
-        long,
-        default_value = "Continue working on what you were working on previously. If you weren't working on something previously, then come up with a list of tasks to work on based on what is left in the codebase."
-    )]
-    message: String,
+    /// Message to pass to Claude Code
+    #[arg(short, long)]
+    message: Option<String>,
+
+    /// Continue the previous conversation
+    #[arg(short, long)]
+    continue_conversation: bool,
+
+    /// Read prompt from a file
+    #[arg(short, long, value_name = "FILE")]
+    file: Option<String>,
 
     /// Dry run - print what would happen without scheduling
     #[arg(short, long)]
@@ -35,6 +38,15 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
+
+    let message = if let Some(file_path) = args.file {
+        fs::read_to_string(&file_path)
+            .with_context(|| format!("Failed to read file: {file_path}"))?
+    } else if let Some(message) = args.message {
+        message
+    } else {
+        "Continue working on what you were working on previously. If you weren't working on something previously, then come up with a list of tasks to work on based on what is left in the codebase.".to_string()
+    };
 
     let target_time = if let Some(time_str) = args.time {
         parse_time(&time_str)?
@@ -51,7 +63,10 @@ async fn main() -> Result<()> {
 
     if args.dry_run {
         println!("Would run at: {}", target_time.format("%Y-%m-%d %H:%M:%S"));
-        println!("Command: {}", build_claude_command(&args.message));
+        println!(
+            "Command: {}",
+            build_claude_command(&message, args.continue_conversation)
+        );
         return Ok(());
     }
 
@@ -60,7 +75,10 @@ async fn main() -> Result<()> {
         "Scheduled to run at: {}",
         target_time.format("%Y-%m-%d %H:%M:%S")
     );
-    println!("Command: {}", build_claude_command(&args.message));
+    println!(
+        "Command: {}",
+        build_claude_command(&message, args.continue_conversation)
+    );
     println!("Press Ctrl+C to cancel...\n");
 
     // Set up Ctrl+C handler
@@ -75,7 +93,7 @@ async fn main() -> Result<()> {
         let now = Local::now();
         if now >= target_time {
             println!("\nRunning scheduled command...");
-            run_claude_command(&args.message)?;
+            run_claude_command(&message, args.continue_conversation)?;
             println!("Command completed successfully!");
             println!("Claude Code Schedule by Ian Macalinao - https://ianm.com");
             break;
@@ -86,9 +104,7 @@ async fn main() -> Result<()> {
         let minutes = duration_until.num_minutes() % 60;
         let seconds = duration_until.num_seconds() % 60;
 
-        print!(
-            "\rTime remaining: {hours:02}:{minutes:02}:{seconds:02}"
-        );
+        print!("\rTime remaining: {hours:02}:{minutes:02}:{seconds:02}");
         use std::io::{self, Write};
         io::stdout().flush().unwrap();
 
@@ -120,16 +136,26 @@ fn parse_time(time_str: &str) -> Result<DateTime<Local>> {
         .context("Failed to create target time")
 }
 
-fn build_claude_command(message: &str) -> String {
-    format!(
-        "claude -c --dangerously-skip-permissions \"{}\"",
-        message.replace("\"", "\\\"")
-    )
+fn build_claude_command_parts(message: &str, continue_conversation: bool) -> Vec<String> {
+    let mut args = Vec::new();
+    if continue_conversation {
+        args.push("-c".to_string());
+    }
+    args.push("--dangerously-skip-permissions".to_string());
+    args.push(message.to_string());
+    args
 }
 
-fn run_claude_command(message: &str) -> Result<()> {
+fn build_claude_command(message: &str, continue_conversation: bool) -> String {
+    let mut parts = vec!["claude".to_string()];
+    parts.extend(build_claude_command_parts(message, continue_conversation));
+    shlex::try_join(parts.iter().map(AsRef::as_ref).collect::<Vec<&str>>()).unwrap()
+}
+
+fn run_claude_command(message: &str, continue_conversation: bool) -> Result<()> {
+    let args = build_claude_command_parts(message, continue_conversation);
     let output = Command::new("claude")
-        .args(["-c", "--dangerously-skip-permissions", message])
+        .args(&args)
         .spawn()
         .context("Failed to start claude command")?
         .wait()
@@ -147,14 +173,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_build_claude_command() {
+    fn test_build_claude_command_parts() {
         assert_eq!(
-            build_claude_command("Hello, world!"),
-            "claude --dangerously-skip-permissions \"Hello, world!\""
+            build_claude_command_parts("Hello, world!", false),
+            vec!["--dangerously-skip-permissions", "Hello, world!"]
         );
         assert_eq!(
-            build_claude_command("Hello \"world\""),
-            "claude --dangerously-skip-permissions \"Hello \\\"world\\\"\""
+            build_claude_command_parts("Hello, world!", true),
+            vec!["-c", "--dangerously-skip-permissions", "Hello, world!"]
         );
     }
 
